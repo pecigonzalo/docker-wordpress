@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /sbin/setuser abc hhvm --mode server -d hhvm.server.type=fastcgi -d hhvm.server.file_socket=/var/run/hhvm/hhvm.sock -d hhvm.server.fix_path_info=true
