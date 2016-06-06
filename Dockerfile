@@ -11,13 +11,7 @@ apt-get clean && rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
 
 ## Install HVVM
 RUN /usr/share/hhvm/install_fastcgi.sh && \
-/usr/bin/update-alternatives --install /usr/bin/php php /usr/bin/hhvm 60 && \
-
-## Install Wordpress
-wget -P /config/www/ https://wordpress.org/latest.zip && \
-unzip /config/www/latest.zip -d /config/www/ && \
-rm -fr /config/www/latest.zip && \
-cp /config/www/wordpress/wp-config-sample.php /config/www/wordpress/wp-config.php
+/usr/bin/update-alternatives --install /usr/bin/php php /usr/bin/hhvm 60
 
 
 #Adding Custom files

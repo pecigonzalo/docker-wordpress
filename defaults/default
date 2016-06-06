@@ -1,39 +1,82 @@
+fastcgi_cache_path /etc/nginx/cache levels=1:2 keys_zone=MYAPP:100m inactive=60m;
+fastcgi_cache_key "$scheme$request_method$host$request_uri";
+
 server {
   listen 80 default_server;
 
   listen 443 ssl;
 
   root /config/www/wordpress;
-  index index.html index.htm index.php;
+  index index.php index.html index.htm;
 
   server_name _;
 
   ssl_certificate /config/keys/cert.crt;
-    ssl_certificate_key /config/keys/cert.key;
+  ssl_certificate_key /config/keys/cert.key;
 
-    client_max_body_size 0;
+  client_max_body_size 0;
 
   location / {
-    try_files $uri $uri/ /index.html /index.php?$args =404;
+    try_files $uri $uri/ /index.php?q=$uri&$args;
   }
 
+  error_page 404 /404.html;
+
+  error_page 500 503 504 /50x.html;
+  location = /50x.html {
+          root /usr/share/nginx/html;
+  }
+
+  #Cache everything by default
+  set $no_cache 0;
+
+  #Don't cache POST requests
+  if ($request_method = POST)
+  {
+      set $no_cache 1;
+  }
+
+  #Don't cache if the URL contains a query string
+  if ($query_string != "")
+  {
+      set $no_cache 1;
+  }
+
+  #Don't cache the following URLs
+  if ($request_uri ~* "/(administrator/|login.php|wp-login.php)")
+  {
+      set $no_cache 1;
+  }
+
+  #Don't cache if there is a cookie called PHPSESSID
+  if ($http_cookie = "PHPSESSID")
+  {
+      set $no_cache 1;
+  }
+
+
   location ~ \.(php|hh)$ {
+    fastcgi_cache_bypass $no_cache;
+    fastcgi_no_cache $no_cache;
+    fastcgi_cache MYAPP;
+    fastcgi_cache_valid 200 60m;
     proxy_intercept_errors on;
     error_page 502 = @fpm;
 
-    include /etc/nginx/fastcgi_params;
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
     # With hhvm:
     fastcgi_pass unix:/var/run/hhvm/hhvm.sock;
-    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    #fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include /etc/nginx/fastcgi_params;
     fastcgi_index index.php;
   }
 
   location @fpm {
     try_files $uri /index.php;
-    include fastcgi_params;
+
     fastcgi_pass 127.0.0.1:9000;
-    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    #fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include /etc/nginx/fastcgi_params;
     fastcgi_index index.php;
   }
 }
