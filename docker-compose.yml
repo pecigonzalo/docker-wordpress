@@ -2,22 +2,29 @@ version: '2'
 services:
   db:
     image: linuxserver/mariadb
-    volumes:
-      - ./db_config:/config
+    # volumes:
+    #   - ./db_config:/config
     environment:
       MYSQL_ROOT_PASSWORD: wordpress
 
-  wordpress:
-    depends_on:
-      - db
+  hhvm:
     build: .
     links:
       - db
-    volumes:
-      - ./wp_config:/config
-    ports:
-      - "80:80"
-      - "443:443"
+    # volumes:
+    #   - ./wp_config:/config
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_PASSWORD: wordpress
+
+  nginx:
+    image: lsiobase/alpine.nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - hhvm
+    volumes_from:
+      - hhvm:ro
+    volumes:
+      - ./nginx/hhvm.conf:/config/nginx/site-confs/default:ro

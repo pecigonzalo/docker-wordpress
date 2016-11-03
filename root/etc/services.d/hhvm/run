@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bash
+
+cd /config/www/wordpress || exit
+
+exec s6-setuidgid abc hhvm --mode server -c /etc/hhvm/server.ini -d hhvm.server.type=fastcgi -d hhvm.server.fix_path_info=true
